@@ -16,9 +16,7 @@ services:
   cinema_django:
     container_name: cinema_admin_panel
     restart: unless-stopped
-    build:
-      context: ..
-      dockerfile: ./infra/docker/cinema_django/Dockerfile
+    image: priest4612/cinema_django:v0.1.22052022
     env_file:
       - ./env/.env
     volumes:
