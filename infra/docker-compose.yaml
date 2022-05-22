@@ -47,7 +47,7 @@ services:
   cinema_es:
     container_name: cinema_fastapi_elastic
     restart: always
-    image: elasticsearch:7.17.1
+    image: elasticsearch:7.17.3
     volumes:
       - /srv/cinema/cinema_es/data:/srv/cinema/cinema_es/data
     environment:
@@ -71,7 +71,7 @@ services:
 
   elt_pg_to_sqlite:
     container_name: elt_pg_to_sqlite
-    restart: unless-stopped
+    restart: always
     build:
       context: ..
       dockerfile: ./infra/docker/elt_pg_to_sqlite/Dockerfile
@@ -80,7 +80,7 @@ services:
     env_file:
       - ./env/.env
     depends_on:
-      - cinema_db
+      - cinema_django
 
 volumes:
   cinema_posgres:
