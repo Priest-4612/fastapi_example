@@ -37,8 +37,7 @@ class FilmService(object):
         data = await self.redis.get(film_id)
         if not data:
             return None
-        film = Film.parse_raw(data)
-        return film
+        return Film.parse_raw(data)
 
     async def _put_film_to_cache(self, film: Film):
         await self.redis.set(

@@ -14,9 +14,12 @@ class PostgresSaver(object):
         fields_template = fields_template.replace('created_at', 'created')
         fields_template = fields_template.replace('updated_at', 'modified')
         tuple_data = [astuple(row) for row in table_data]
-        query = """INSERT INTO {tablename} ({fields})
-                   VALUES %s
-                   ON CONFLICT (id) DO NOTHING;""".format(
+        template_sql = """
+            INSERT INTO {tablename} ({fields})
+            VALUES %s
+            ON CONFLICT (id) DO NOTHING;
+        """
+        query = template_sql.format(
             tablename='content.{table}'.format(table=table),
             fields=fields_template,
         )

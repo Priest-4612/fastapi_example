@@ -5,7 +5,6 @@ from pydantic import BaseModel
 
 from services.films import FilmService, get_film_service
 
-
 router = APIRouter()
 
 

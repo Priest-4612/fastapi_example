@@ -3,7 +3,7 @@ from pathlib import Path
 
 from pydantic import BaseConfig, BaseSettings
 
-from core.logger import LOGGING
+from core.logger import LOGGING  # isort:skip
 
 logging_config.dictConfig(LOGGING)
 

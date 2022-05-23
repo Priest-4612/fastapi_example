@@ -17,8 +17,8 @@ dsl = {
     'dbname': os.getenv('POSTGRES_DB', None),
     'user': os.getenv('POSTGRES_USER', None),
     'password': os.getenv('POSTGRES_PASSWORD', None),
-    'host': os.getenv('DB_HOST', None),
-    'port': os.getenv('DB_PORT', '5432'),
+    'host': os.getenv('POSTGRES_HOST', None),
+    'port': os.getenv('POSTGRES_PORT', '5432'),
 }
 
 tables = [

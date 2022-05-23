@@ -4,8 +4,8 @@ class SQLiteLoader(object):
 
     def load_data(self, table, dataclass_dict, load_rows_size=1):
         dataclass = dataclass_dict[table]
-        query = 'SELECT * FROM {table};'.format(table=table)
-        self._cursor.execute(query)
+        query = 'SELECT * FROM {table};'
+        self._cursor.execute(query.format(table=table))
         while True:
             loaded_data = self._cursor.fetchmany(load_rows_size)
             if not loaded_data:

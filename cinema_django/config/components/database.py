@@ -8,8 +8,8 @@ DATABASES = {
         'NAME': os.getenv('POSTGRES_DB', None),
         'USER': os.getenv('POSTGRES_USER', None),
         'PASSWORD': os.getenv('POSTGRES_PASSWORD', None),
-        'HOST': os.getenv('DB_HOST', None),
-        'PORT': os.getenv('DB_PORT', None),
+        'HOST': os.getenv('POSTGRES_HOST', None),
+        'PORT': os.getenv('POSTGRES_PORT', None),
         'OPTIONS': {
            'options': '-c search_path=public,content',
         },
