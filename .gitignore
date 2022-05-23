@@ -125,10 +125,6 @@ dmypy.json
 
 .python-version
 
-.vscode
-.editorconfig
-
-
 ENV/*
 .env
 env/*
