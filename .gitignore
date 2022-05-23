@@ -132,6 +132,7 @@ env/*
 !env/.env.example
 env.bak/
 venv.bak/
+*.env
 
 cinema_django/data/media_backend/*
 cinema_django/data/static_backend/*

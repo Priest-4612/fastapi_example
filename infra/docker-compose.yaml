@@ -26,7 +26,7 @@ services:
       - /srv/cinema/cinema_django/cinema_static:/cinema_django/data/static_backend
       - /srv/cinema/cinema_django/cinema_media:/cinema_django/data/media_backend
     expose:
-      - 8000
+      - "8000"
     depends_on:
       - cinema_db
 
@@ -55,6 +55,8 @@ services:
       - xpack.security.enabled=false
       - xpack.security.http.ssl.enabled=false
       - ES_JAVA_OPTS=-Xmx512m -Xms512m
+    expose:
+      - "9200"
     ports:
       - "9200:9200"
 
@@ -66,6 +68,8 @@ services:
       - /srv/cinema/cinema_redis/data:/srv/cinema/cinema_redis/data
     depends_on:
       - cinema_es
+    expose:
+      - "6379"
     ports:
       - "6379:6379"
 

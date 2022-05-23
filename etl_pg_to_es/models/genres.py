@@ -1,9 +1,9 @@
 from pydantic import BaseConfig, Field
 
-from models.mixin_orjson import BaseModelOrjson
+from models.mixin_orjson import OrjsonMixin, TimeStampedMixin
 
 
-class Genre(BaseModelOrjson):
+class Genre(OrjsonMixin, TimeStampedMixin):
     id: str = Field(..., alias='uuid')
     name: str
     description: str
