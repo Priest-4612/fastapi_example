@@ -1,18 +1,21 @@
 import backoff
 import psycopg2
+from contextlib import contextmanager
 from psycopg2 import connect as pgconnect, sql
 from psycopg2.extras import DictCursor
 
 
 class PostgresExtractor(object):
-    def __init__(self, postgres_dsl):
-        self.cnf = postgres_dsl
+    def __init__(self, postgres_dsn):
+        self.dsn = postgres_dsn
         self.conn = self._connect()
 
     @backoff.on_exception(backoff.expo, psycopg2.Error, max_time=60)
     def pg_single_query(self, sqlquery: str, queryargs: tuple) -> list:
-        self.conn = self._connect() if self.conn.closed != 0 else self.conn
-        with self.conn as conn, conn.cursor as cursor:
+        if self.conn.closed != 0:
+            self.conn = self._connect()
+        with self._postgres_connector() as conn:
+            cursor = conn.cursor()
             cursor.execute(sqlquery, queryargs)
             row = cursor.fetchone()
         return row
@@ -20,22 +23,30 @@ class PostgresExtractor(object):
     @backoff.on_predicate(backoff.fibo, max_time=60)
     def _connect(self):
         return pgconnect(
-            dbname=self.cnf.postgres_db,
-            user=self.cnf.postgres_user,
-            password=self.cnf.postgres_password,
-            host=self.cnf.postgres_host,
-            port=self.cnf.postgres_port,
+            dbname=self.dsn.postgres_db,
+            user=self.dsn.postgres_user,
+            password=self.dsn.postgres_password,
+            host=self.dsn.postgres_host,
+            port=self.dsn.postgres_port,
             options='-c search_path={schema}'.format(
-                schema=self.cnf.postgres_schema,
+                schema=self.dsn.postgres_schema,
             ),
         )
 
+    @contextmanager
+    def _postgres_connector(self):
+        conn = self._connect()
+        try:
+            yield conn
+        finally:
+            conn.close()
+
 
 if __name__ == '__main__':
-    from config import Settings
-    extractor = PostgresExtractor(Settings())
+    from config import PostgresDsn
+    extractor = PostgresExtractor(PostgresDsn())
     sqlquery = sql.SQL(
-        'SELECT modified FROM {table} ORDER BY modified LIMIT 1',
+        'SELECT * FROM {table} ORDER BY modified LIMIT 1',
     ).format(
         table=sql.Identifier('genre'),
     )
