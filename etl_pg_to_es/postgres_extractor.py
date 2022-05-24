@@ -1,7 +1,8 @@
-import backoff
-import psycopg2
 from contextlib import contextmanager
-from psycopg2 import connect as pgconnect, sql
+
+import backoff
+from psycopg2 import connect as pgconnect
+from psycopg2 import sql
 from psycopg2.extras import DictCursor
 
 
@@ -10,17 +11,17 @@ class PostgresExtractor(object):
         self.dsn = postgres_dsn
         self.conn = self._connect()
 
-    @backoff.on_exception(backoff.expo, psycopg2.Error, max_time=60)
-    def pg_single_query(self, sqlquery: str, queryargs: tuple) -> list:
+    @backoff.on_predicate(backoff.expo, max_time=60)
+    def pg_query(self, sqlquery: str, queryargs: tuple, single: bool) -> list:
         if self.conn.closed != 0:
             self.conn = self._connect()
-        with self._postgres_connector() as conn:
-            cursor = conn.cursor()
+        with self._postgres_cursor() as cursor:
+            rows = None
             cursor.execute(sqlquery, queryargs)
-            row = cursor.fetchone()
-        return row
+            rows = cursor.fetchone() if single else cursor.fetchall()
+        return rows
 
-    @backoff.on_predicate(backoff.fibo, max_time=60)
+    @backoff.on_predicate(backoff.expo, max_time=60)
     def _connect(self):
         return pgconnect(
             dbname=self.dsn.postgres_db,
@@ -31,24 +32,29 @@ class PostgresExtractor(object):
             options='-c search_path={schema}'.format(
                 schema=self.dsn.postgres_schema,
             ),
+            cursor_factory=DictCursor,
         )
 
     @contextmanager
-    def _postgres_connector(self):
+    def _postgres_cursor(self):
         conn = self._connect()
+        cursor = conn.cursor()
         try:
-            yield conn
+            yield cursor
         finally:
             conn.close()
 
 
 if __name__ == '__main__':
-    from config import PostgresDsn
+    import pprint
+
+    from core.config import PostgresDsn
+
     extractor = PostgresExtractor(PostgresDsn())
     sqlquery = sql.SQL(
-        'SELECT * FROM {table} ORDER BY modified LIMIT 1',
+        'SELECT * FROM {table} ORDER BY modified Limit 1',
     ).format(
-        table=sql.Identifier('genre'),
+        table=sql.Identifier('person'),
     )
-    query = extractor.pg_single_query(sqlquery, None)
-    print(query)
+    query = extractor.pg_query(sqlquery=sqlquery, queryargs=None, single=False)
+    pprint.pprint(query)

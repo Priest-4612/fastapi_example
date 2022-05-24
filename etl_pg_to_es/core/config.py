@@ -1,4 +1,10 @@
+from logging import config as logging_config
+
 from pydantic import BaseConfig, BaseSettings
+
+from core.logger import LOGGING
+
+logging_config.dictConfig(LOGGING)
 
 
 class PostgresDsn(BaseSettings):
@@ -28,8 +34,3 @@ class Settings(BaseSettings):
 
     class Config(BaseConfig):
         env_file = '../infra/env/.env'
-
-
-if __name__ == '__main__':
-    cfg = PostgresDsn().dict()
-    print(cfg)
