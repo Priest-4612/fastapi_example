@@ -88,8 +88,7 @@ class PostgresExtractor(object):
             GROUP BY fw.id
         """
         rows = self.pg_query(sqlquery=sql_tmp, queryargs=(ids,), single=False)
-        return rows
-        # return [films.Film(**row) for row in rows]
+        return [films.Film(**row) for row in rows]
 
     @backoff.on_predicate(backoff.expo, max_time=60)
     def _connect(self):
@@ -122,6 +121,6 @@ if __name__ == '__main__':
 
     extractor = PostgresExtractor(PostgresDsn())
     lasttime = extractor.get_start_modified_time_object('film_work')
-    update_list = extractor.get_update_object('film_work', lasttime, limit=1)
+    update_list = extractor.get_update_object('film_work', lasttime, limit=5)
     film_list = extractor.get_film_by_id(tuple(update_list))
     pprint.pprint(film_list)

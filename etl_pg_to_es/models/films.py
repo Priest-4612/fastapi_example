@@ -15,10 +15,10 @@ class Film(OrjsonMixin, TimeStampedMixin):
     actors_names: Optional[str]
     directors_names: Optional[str]
     writers_names: Optional[str]
-    genres: Optional[List[genres.Genre]]
-    actors: Optional[List[persons.Person]]
-    directors: Optional[List[persons.Person]]
-    writers: Optional[List[persons.Person]]
+    genres: Optional[List[str]]
+    actors: Optional[List[str]]
+    directors: Optional[List[str]]
+    writers: Optional[List[str]]
 
     class Config(BaseConfig):
         allow_population_by_field_name = True
