@@ -7,8 +7,8 @@ from psycopg2 import connect as pgconnect
 from psycopg2 import sql
 from psycopg2.extras import DictCursor
 
-from models.supporting_class import ModifiedIs
 from models import films, genres, persons
+from models.supporting_class import ModifiedIs
 
 
 class PostgresExtractor(object):
@@ -67,6 +67,15 @@ class PostgresExtractor(object):
         rows = self.pg_query(sqlquery=sql_tmp, queryargs=(ids,), single=False)
         return [genres.Genre(**row) for row in rows]
 
+    def get_person_by_id(self, ids: List[str]) -> List[persons.Person]:
+        sql_tmp = """
+            SELECT *
+            FROM person
+            WHERE id IN %s
+        """
+        rows = self.pg_query(sqlquery=sql_tmp, queryargs=(ids,), single=False)
+        return [persons.Person(**row) for row in rows]
+
     def get_film_by_id(self, ids: List[str]) -> List[films.Film]:
         sql_tmp = """
             SELECT
@@ -78,7 +87,12 @@ class PostgresExtractor(object):
             FILTER (WHERE pfw.role = 'director') AS directors_names,
             ARRAY_AGG(DISTINCT p.full_name)
             FILTER (WHERE pfw.role = 'writer') AS writers_names,
-            ARRAY_AGG(DISTINCT g.id || ' : ' || g.name) AS genres,
+            ARRAY_AGG(
+                DISTINCT
+                g.id || ' : '
+                || g.name || ' : '
+                || COALESCE(g.description, 'EMPTY')
+            ) AS genres,
             ARRAY_AGG(DISTINCT p.id || ' : ' || p.full_name)
             FILTER (WHERE pfw.role = 'director') AS directors,
             ARRAY_AGG(DISTINCT p.id || ' : ' || p.full_name)
@@ -94,8 +108,51 @@ class PostgresExtractor(object):
             GROUP BY fw.id
         """
         rows = self.pg_query(sqlquery=sql_tmp, queryargs=(ids,), single=False)
-        # return [films.Film(**row) for row in rows]
-        return rows
+        return [
+            films.Film(
+                id=row['id'],
+                title=row['title'],
+                description=row['description'],
+                rating=row['rating'],
+                type=row['type'],
+                genres_names=row['genres_names'],
+                actors_names=row['actors_names'],
+                directors_names=row['directors_names'],
+                writers_names=row['writers_names'],
+                genres=[
+                    genres.Genre(**self._genre_split(genre))
+                    for genre in row['genres']
+                ],
+                actors=[
+                    persons.Person(**self._person_split(actor))
+                    for actor in row['actors']
+                ],
+                directors=[
+                    persons.Person(**self._person_split(director))
+                    for director in row['directors']
+                ],
+                writers=[
+                    persons.Person(**self._person_split(writer))
+                    for writer in row['writers']
+                ],
+            )
+            for row in rows
+        ]
+
+    def _genre_split(self, row):
+        genre = row.split(' : ')
+        return {
+            'id': genre[0],
+            'name': genre[1],
+            'description': genre[2],
+        }
+
+    def _person_split(self, row):
+        person = row.split(' : ')
+        return {
+            'id': person[0],
+            'name': person[1],
+        }
 
     @backoff.on_predicate(backoff.expo, max_time=60)
     def _connect(self):

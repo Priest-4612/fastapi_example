@@ -11,10 +11,11 @@ class Film(OrjsonMixin):
     title: str
     description: str
     imdb_rating: float = Field(0, alias='rating')
-    genres_names: Optional[str]
-    actors_names: Optional[str]
-    directors_names: Optional[str]
-    writers_names: Optional[str]
+    type: str = Field(0, alias='movie')
+    genres_names: Optional[List[str]]
+    actors_names: Optional[List[str]]
+    directors_names: Optional[List[str]]
+    writers_names: Optional[List[str]]
     genres: Optional[List[genres.Genre]]
     actors: Optional[List[persons.Person]]
     directors: Optional[List[persons.Person]]

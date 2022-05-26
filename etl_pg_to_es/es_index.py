@@ -84,6 +84,7 @@ INDEX_MOVIES_SETTINGS_ELASTIC = {
             },
             'description': ES_PROPERTIES_TEXT_RU_EN,
             'imdb_rating': {'type': 'float'},
+            'type': ES_PROPERTIES_TEXT_RU_EN,
             'genres_names': ES_PROPERTIES_TEXT_RU_EN,
             'actors_names': ES_PROPERTIES_TEXT_RU_EN,
             'directors_names': ES_PROPERTIES_TEXT_RU_EN,

@@ -1,9 +1,9 @@
 from pydantic import BaseConfig, Field
 
-from models.mixin_orjson import OrjsonMixin, TimeStampedMixin
+from models.mixin_orjson import OrjsonMixin
 
 
-class ModifiedIs(OrjsonMixin, TimeStampedMixin):
+class ModifiedIs(OrjsonMixin):
     id: str = Field(..., alias='uuid')
 
     class Config(BaseConfig):
