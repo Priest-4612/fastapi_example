@@ -71,14 +71,20 @@ class PostgresExtractor(object):
         sql_tmp = """
             SELECT
             fw.id, fw.title, fw.description, fw.rating, fw.type,
-            ARRAY_AGG(DISTINCT g.name) AS genres,
+            ARRAY_AGG(DISTINCT g.name) AS genres_names,
+            ARRAY_AGG(DISTINCT p.full_name) FILTER
+            (WHERE pfw.role = 'actor') AS actors_names,
+            ARRAY_AGG(DISTINCT p.full_name)
+            FILTER (WHERE pfw.role = 'director') AS directors_names,
+            ARRAY_AGG(DISTINCT p.full_name)
+            FILTER (WHERE pfw.role = 'writer') AS writers_names,
+            ARRAY_AGG(DISTINCT g.id || ' : ' || g.name) AS genres,
             ARRAY_AGG(DISTINCT p.id || ' : ' || p.full_name)
             FILTER (WHERE pfw.role = 'director') AS directors,
             ARRAY_AGG(DISTINCT p.id || ' : ' || p.full_name)
             FILTER (WHERE pfw.role = 'actor') AS actors,
             ARRAY_AGG(DISTINCT p.id || ' : ' || p.full_name)
-            FILTER (WHERE pfw.role = 'writer') AS writers,
-            fw.created, fw.modified
+            FILTER (WHERE pfw.role = 'writer') AS writers
             FROM film_work as fw
             LEFT JOIN person_film_work as pfw ON pfw.film_work_id = fw.id
             LEFT JOIN person as p ON p.id = pfw.person_id
@@ -88,7 +94,8 @@ class PostgresExtractor(object):
             GROUP BY fw.id
         """
         rows = self.pg_query(sqlquery=sql_tmp, queryargs=(ids,), single=False)
-        return [films.Film(**row) for row in rows]
+        # return [films.Film(**row) for row in rows]
+        return rows
 
     @backoff.on_predicate(backoff.expo, max_time=60)
     def _connect(self):
@@ -112,15 +119,3 @@ class PostgresExtractor(object):
             yield cursor
         finally:
             conn.close()
-
-
-if __name__ == '__main__':
-    import pprint
-
-    from core.config import PostgresDsn
-
-    extractor = PostgresExtractor(PostgresDsn())
-    lasttime = extractor.get_start_modified_time_object('film_work')
-    update_list = extractor.get_update_object('film_work', lasttime, limit=5)
-    film_list = extractor.get_film_by_id(tuple(update_list))
-    pprint.pprint(film_list)

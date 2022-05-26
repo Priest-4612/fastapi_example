@@ -3,10 +3,10 @@ from typing import List, Optional
 from pydantic import BaseConfig, Field
 
 from models import genres, persons
-from models.mixin_orjson import OrjsonMixin, TimeStampedMixin
+from models.mixin_orjson import OrjsonMixin
 
 
-class Film(OrjsonMixin, TimeStampedMixin):
+class Film(OrjsonMixin):
     id: str = Field(..., alias='uuid')
     title: str
     description: str

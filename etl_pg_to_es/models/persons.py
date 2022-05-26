@@ -1,9 +1,9 @@
 from pydantic import BaseConfig, Field
 
-from models.mixin_orjson import OrjsonMixin, TimeStampedMixin
+from models.mixin_orjson import OrjsonMixin
 
 
-class Person(OrjsonMixin, TimeStampedMixin):
+class Person(OrjsonMixin):
     id: str = Field(..., alias='uuid')
     name: str = Field(..., alias='full_name')
 

@@ -2,10 +2,10 @@ from typing import Optional
 
 from pydantic import BaseConfig, Field
 
-from models.mixin_orjson import OrjsonMixin, TimeStampedMixin
+from models.mixin_orjson import OrjsonMixin
 
 
-class Genre(OrjsonMixin, TimeStampedMixin):
+class Genre(OrjsonMixin):
     id: str = Field(..., alias='uuid')
     name: str
     description: Optional[str]

@@ -1,5 +1,3 @@
-import datetime
-
 import orjson
 from pydantic import BaseConfig, BaseModel
 
@@ -12,8 +10,3 @@ class OrjsonMixin(BaseModel):
     class Config(BaseConfig):
         json_loads = orjson.loads
         json_dumps = _orjson_dumps
-
-
-class TimeStampedMixin(BaseModel):
-    created: datetime.datetime
-    modified: datetime.datetime
