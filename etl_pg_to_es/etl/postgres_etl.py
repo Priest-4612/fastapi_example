@@ -26,7 +26,7 @@ class PostgresExtractor(object):
             rows = cursor.fetchone() if single else cursor.fetchall()
         return rows
 
-    def get_start_modified_time_object(self, table: str) -> datetime:
+    def get_started_time(self, table: str) -> datetime:
         sql_tmp = """
             SELECT modified
             FROM {table}
@@ -44,7 +44,7 @@ class PostgresExtractor(object):
         self, table: str, lasttime: datetime, limit: int,
     ) -> list[ModifiedIs]:
         sql_tmp = """
-            SELECT id, created, modified
+            SELECT id
             FROM {table}
             WHERE modified > %s
             ORDER BY modified
@@ -67,14 +67,28 @@ class PostgresExtractor(object):
         rows = self.pg_query(sqlquery=sql_tmp, queryargs=(ids,), single=False)
         return [genres.Genre(**row) for row in rows]
 
-    def get_person_by_id(self, ids: List[str]) -> List[persons.Person]:
+    def get_person_by_id(self, ids: List[str]) -> List[persons.PersonForFolm]:
         sql_tmp = """
-            SELECT *
-            FROM person
-            WHERE id IN %s
+            SELECT
+                P.id, P.full_name,
+                ARRAY_AGG(DISTINCT fwp.role) AS role,
+                ARRAY_AGG(
+                    DISTINCT CAST(fwp.film_work_id AS VARCHAR)
+                ) AS film_ids,
+                ARRAY_AGG(CAST(fwp.film_work_id AS VARCHAR))
+                FILTER (WHERE fwp.role = 'actor') AS actor,
+                ARRAY_AGG(CAST(fwp.film_work_id AS VARCHAR))
+                FILTER (WHERE fwp.role = 'director') AS director,
+                ARRAY_AGG(CAST(fwp.film_work_id AS VARCHAR))
+                FILTER (WHERE fwp.role = 'writer') AS writer
+            FROM
+                person AS P
+            LEFT JOIN person_film_work AS fwp ON P.id = fwp.person_id
+            WHERE P.id IN %s
+            GROUP BY P.id
         """
         rows = self.pg_query(sqlquery=sql_tmp, queryargs=(ids,), single=False)
-        return [persons.Person(**row) for row in rows]
+        return [persons.PersonDetails(**row) for row in rows]
 
     def get_film_by_id(self, ids: List[str]) -> List[films.Film]:
         sql_tmp = """
@@ -124,15 +138,15 @@ class PostgresExtractor(object):
                     for genre in row['genres']
                 ],
                 actors=[
-                    persons.Person(**self._person_split(actor))
+                    persons.PersonForFolm(**self._person_split(actor))
                     for actor in row['actors']
                 ],
                 directors=[
-                    persons.Person(**self._person_split(director))
+                    persons.PersonForFolm(**self._person_split(director))
                     for director in row['directors']
                 ],
                 writers=[
-                    persons.Person(**self._person_split(writer))
+                    persons.PersonForFolm(**self._person_split(writer))
                     for writer in row['writers']
                 ],
             )

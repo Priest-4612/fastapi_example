@@ -17,9 +17,9 @@ class Film(OrjsonMixin):
     directors_names: Optional[List[str]]
     writers_names: Optional[List[str]]
     genres: Optional[List[genres.Genre]]
-    actors: Optional[List[persons.Person]]
-    directors: Optional[List[persons.Person]]
-    writers: Optional[List[persons.Person]]
+    actors: Optional[List[persons.PersonForFolm]]
+    directors: Optional[List[persons.PersonForFolm]]
+    writers: Optional[List[persons.PersonForFolm]]
 
     class Config(BaseConfig):
         allow_population_by_field_name = True
