@@ -19,17 +19,23 @@ class PostgresDsn(BaseSettings):
         env_file = '../infra/env/.env'
 
 
-class Settings(BaseSettings):
-    redis_host: str
-    redis_port: int
-    redis_password: str
-    redis_prefix: str
+class ElasticDns(BaseSettings):
     elastic_host: str
     elastic_port: int
     elastic_scheme: str
     elastic_user: str
     elastic_password: str
     elastic_index: str
+
+    class Config(BaseConfig):
+        env_file = '../infra/env/.env'
+
+
+class Settings(BaseSettings):
+    redis_host: str
+    redis_port: int
+    redis_password: str
+    redis_prefix: str
     etl_size_limit: int
 
     class Config(BaseConfig):
