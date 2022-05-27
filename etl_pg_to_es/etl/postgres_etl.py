@@ -41,7 +41,7 @@ class PostgresExtractor(object):
         return modified_time[0] - timedelta(seconds=1)
 
     def get_update_object(
-        self, table: str, lasttime: datetime, limit: int,
+        self, table: str, lasttime: datetime, limit: int = None,
     ) -> list[ModifiedIs]:
         sql_tmp = """
             SELECT id

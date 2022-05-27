@@ -1,5 +1,3 @@
-import json
-
 ES_SETTINGS = {
     'index': {
         'number_of_shards': 1,
@@ -60,12 +58,22 @@ ES_PROPERTIES_TEXT_RU_EN = {
     'analyzer': 'ru_en',
 }
 
-ES_PROPERTIES_NESTED = {
+ES_PROPERTIES_NESTED_PERSON = {
     'type': 'nested',
     'dynamic': 'strict',
     'properties': {
         'id': ES_PROPERTIES_KEYWORD,
         'name': ES_PROPERTIES_TEXT_RU_EN,
+    },
+}
+
+ES_PROPERTIES_NESTED_GENRE = {
+    'type': 'nested',
+    'dynamic': 'strict',
+    'properties': {
+        'id': ES_PROPERTIES_KEYWORD,
+        'name': ES_PROPERTIES_KEYWORD,
+        'description': ES_PROPERTIES_TEXT_RU_EN,
     },
 }
 
@@ -86,10 +94,10 @@ INDEX_MOVIES_SETTINGS_ELASTIC = {
             'actors_names': ES_PROPERTIES_TEXT_RU_EN,
             'directors_names': ES_PROPERTIES_TEXT_RU_EN,
             'writers_names': ES_PROPERTIES_TEXT_RU_EN,
-            'genres': ES_PROPERTIES_NESTED,
-            'actors': ES_PROPERTIES_NESTED,
-            'directors': ES_PROPERTIES_NESTED,
-            'writers': ES_PROPERTIES_NESTED,
+            'genres': ES_PROPERTIES_NESTED_GENRE,
+            'actors': ES_PROPERTIES_NESTED_PERSON,
+            'directors': ES_PROPERTIES_NESTED_PERSON,
+            'writers': ES_PROPERTIES_NESTED_PERSON,
         },
     },
 }
@@ -100,11 +108,11 @@ INDEX_PERSONS_SETTINGS_ELASTIC = {
         'dynamic': 'strict',
         'properties': {
             'id': ES_PROPERTIES_KEYWORD,
-            'full_name': {
+            'name': {
                 **ES_PROPERTIES_TEXT_RU_EN,
                 **ES_PROPERTIES_RAW,
             },
-            'role': ES_PROPERTIES_KEYWORD,
+            'role': ES_PROPERTIES_TEXT_RU_EN,
             'film_ids': ES_PROPERTIES_KEYWORD,
             'actor_film_ids': ES_PROPERTIES_KEYWORD,
             'director_film_ids': ES_PROPERTIES_KEYWORD,
@@ -126,263 +134,7 @@ INDEX_GENRES_SETTINGS_ELASTIC = {
 }
 
 ELASTIC_INDEX = {
-    'movies__2': INDEX_MOVIES_SETTINGS_ELASTIC,
-    'genres__2': INDEX_GENRES_SETTINGS_ELASTIC,
-    'persons__2': INDEX_PERSONS_SETTINGS_ELASTIC,
+    'movies': INDEX_MOVIES_SETTINGS_ELASTIC,
+    'genres': INDEX_GENRES_SETTINGS_ELASTIC,
+    'persons': INDEX_PERSONS_SETTINGS_ELASTIC,
 }
-
-CINEMA_INDEX_BODY = """
-{
-  "settings": {
-    "index": {
-        "number_of_shards": 1,
-        "number_of_replicas": 0
-    },
-    "refresh_interval": "1s",
-    "analysis": {
-      "filter": {
-        "english_stop": {
-          "type":       "stop",
-          "stopwords":  "_english_"
-        },
-        "english_stemmer": {
-          "type": "stemmer",
-          "language": "english"
-        },
-        "english_possessive_stemmer": {
-          "type": "stemmer",
-          "language": "possessive_english"
-        },
-        "russian_stop": {
-          "type":       "stop",
-          "stopwords":  "_russian_"
-        },
-        "russian_stemmer": {
-          "type": "stemmer",
-          "language": "russian"
-        }
-      },
-      "analyzer": {
-        "ru_en": {
-          "tokenizer": "standard",
-          "filter": [
-            "lowercase",
-            "english_stop",
-            "english_stemmer",
-            "english_possessive_stemmer",
-            "russian_stop",
-            "russian_stemmer"
-          ]
-        }
-      }
-    }
-  },
-  "mappings": {
-    "dynamic": "strict",
-    "properties": {
-      "id": {
-        "type": "keyword"
-      },
-      "imdb_rating": {
-        "type": "float"
-      },
-      "imdb_tconst": {
-        "type": "keyword"
-      },
-      "filmtype": {
-        "type": "keyword"
-      },
-      "genre": {
-        "type": "keyword"
-      },
-      "title": {
-        "type": "text",
-        "analyzer": "ru_en",
-        "fields": {
-          "raw": {
-            "type":  "keyword"
-          }
-        }
-      },
-      "description": {
-        "type": "text",
-        "analyzer": "ru_en"
-      },
-      "directors_names": {
-        "type": "text",
-        "analyzer": "ru_en"
-      },
-      "actors_names": {
-        "type": "text",
-        "analyzer": "ru_en"
-      },
-      "writers_names": {
-        "type": "text",
-        "analyzer": "ru_en"
-      },
-      "directors": {
-        "type": "nested",
-        "dynamic": "strict",
-        "properties": {
-          "id": {
-            "type": "keyword"
-          },
-          "name": {
-            "type": "text",
-            "analyzer": "ru_en"
-          }
-        }
-      },
-      "actors": {
-        "type": "nested",
-        "dynamic": "strict",
-        "properties": {
-          "id": {
-            "type": "keyword"
-          },
-          "name": {
-            "type": "text",
-            "analyzer": "ru_en"
-          }
-        }
-      },
-      "writers": {
-        "type": "nested",
-        "dynamic": "strict",
-        "properties": {
-          "id": {
-            "type": "keyword"
-          },
-          "name": {
-            "type": "text",
-            "analyzer": "ru_en"
-          }
-        }
-      }
-    }
-  }
-}
-"""
-
-CINEMA_INDEX_BODY_2 = """
-{
-    "movies": {
-      "aliases": {},
-      "mappings": {
-        "dynamic": "strict",
-        "properties": {
-          "actors": {
-            "type": "nested",
-            "dynamic": "strict",
-            "properties": {
-              "id": {
-                "type": "keyword"
-              },
-              "name": {
-                "type": "text",
-                "analyzer": "ru_en"
-              }
-            }
-          },
-          "actors_names": {
-            "type": "text",
-            "analyzer": "ru_en"
-          },
-          "description": {
-            "type": "text",
-            "analyzer": "ru_en"
-          },
-          "director": {
-            "type": "text",
-            "analyzer": "ru_en"
-          },
-          "genre": {
-            "type": "keyword"
-          },
-          "id": {
-            "type": "keyword"
-          },
-          "imdb_rating": {
-            "type": "float"
-          },
-          "title": {
-            "type": "text",
-            "fields": {
-              "raw": {
-                "type": "keyword"
-              }
-            },
-            "analyzer": "ru_en"
-          },
-          "writers": {
-            "type": "nested",
-            "dynamic": "strict",
-            "properties": {
-              "id": {
-                "type": "keyword"
-              },
-              "name": {
-                "type": "text",
-                "analyzer": "ru_en"
-              }
-            }
-          },
-          "writers_names": {
-            "type": "text",
-            "analyzer": "ru_en"
-          }
-        }
-      },
-      "settings": {
-        "index": {
-          "refresh_interval": "1s",
-          "number_of_shards": "1",
-          "provided_name": "movies",
-          "creation_date": "1645717374283",
-          "analysis": {
-            "filter": {
-              "russian_stemmer": {
-                "type": "stemmer",
-                "language": "russian"
-              },
-              "english_stemmer": {
-                "type": "stemmer",
-                "language": "english"
-              },
-              "english_possessive_stemmer": {
-                "type": "stemmer",
-                "language": "possessive_english"
-              },
-              "russian_stop": {
-                "type": "stop",
-                "stopwords": "_russian_"
-              },
-              "english_stop": {
-                "type": "stop",
-                "stopwords": "_english_"
-              }
-            },
-            "analyzer": {
-              "ru_en": {
-                "filter": [
-                  "lowercase",
-                  "english_stop",
-                  "english_stemmer",
-                  "english_possessive_stemmer",
-                  "russian_stop",
-                  "russian_stemmer"
-                ],
-                "tokenizer": "standard"
-              }
-            }
-          },
-          "number_of_replicas": "1",
-          "uuid": "sRxKa75oSP24oWJnFiEjoQ",
-          "version": {
-            "created": "7070099"
-          }
-        }
-      }
-    }
-  }
-"""

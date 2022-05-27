@@ -1,5 +1,5 @@
 import backoff
-from elasticsearch import Elasticsearch, TransportError, exceptions, helpers
+from elasticsearch import Elasticsearch, exceptions, helpers
 from pydantic.main import BaseModel
 
 
@@ -23,15 +23,19 @@ class ElasticETL(object):
     @backoff.on_predicate(backoff.expo, max_time=60)
     def set_bulk(self, index, data):
         try:
-            helpers.bulk(self.client, self.generate_elastic_data(index, data))
+            return helpers.bulk(
+                self.es, self.generate_elastic_data(index, data),
+            )
         except exceptions.ConnectionError:
             self.connect()
-            helpers.bulk(self.client, self.generate_elastic_data(index, data))
+            return helpers.bulk(
+                self.es, self.generate_elastic_data(index, data),
+            )
 
     def generate_elastic_data(self, index, data: list[BaseModel]):
         yield from (
             {
-                'index': index,
+                '_index': index,
                 '_id': item.id,
                 '_source': item.json(),
             }
