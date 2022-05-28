@@ -9,9 +9,9 @@ from models.mixin_orjson import OrjsonMixin
 class Film(OrjsonMixin):
     id: str = Field(..., alias='uuid')
     title: str
-    description: str
-    imdb_rating: float = Field(0, alias='rating')
-    type: str = Field(0, alias='movie')
+    description: Optional[str]
+    imdb_rating: Optional[float] = Field(default=0, alias='rating')
+    type: str = Field(default='movie', alias='type')
     genres_names: Optional[List[str]]
     actors_names: Optional[List[str]]
     directors_names: Optional[List[str]]

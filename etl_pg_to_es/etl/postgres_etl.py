@@ -7,6 +7,8 @@ from psycopg2 import connect as pgconnect
 from psycopg2 import sql
 from psycopg2.extras import DictCursor
 
+from etl.sql_templates import (FILM_BY_ID, GENRE_BY_ID, PERSON_BY_ID,
+                               STARTED_TIME, UPDATE_IDS)
 from models import films, genres, persons
 from models.supporting_class import ModifiedIs
 
@@ -27,12 +29,7 @@ class PostgresExtractor(object):
         return rows
 
     def get_started_time(self, table: str) -> datetime:
-        sql_tmp = """
-            SELECT modified
-            FROM {table}
-            ORDER BY modified
-        """
-        sqlquery = sql.SQL(sql_tmp).format(table=sql.Identifier(table))
+        sqlquery = sql.SQL(STARTED_TIME).format(table=sql.Identifier(table))
         modified_time = self.pg_query(
             sqlquery=sqlquery,
             queryargs=None,
@@ -43,14 +40,7 @@ class PostgresExtractor(object):
     def get_update_object(
         self, table: str, lasttime: datetime, limit: int = None,
     ) -> list[ModifiedIs]:
-        sql_tmp = """
-            SELECT id
-            FROM {table}
-            WHERE modified > %s
-            ORDER BY modified
-            LIMIT %s
-        """
-        sqlquery = sql.SQL(sql_tmp).format(table=sql.Identifier(table))
+        sqlquery = sql.SQL(UPDATE_IDS).format(table=sql.Identifier(table))
         rows = self.pg_query(
             sqlquery=sqlquery,
             queryargs=(lasttime, limit),
@@ -59,69 +49,27 @@ class PostgresExtractor(object):
         return [ModifiedIs(**row).id for row in rows]
 
     def get_genre_by_id(self, ids: List[str]) -> List[genres.Genre]:
-        sql_tmp = """
-            SELECT *
-            FROM genre
-            WHERE id IN %s
-        """
-        rows = self.pg_query(sqlquery=sql_tmp, queryargs=(ids,), single=False)
+        rows = self.pg_query(
+            sqlquery=GENRE_BY_ID,
+            queryargs=(ids,),
+            single=False,
+        )
         return [genres.Genre(**row) for row in rows]
 
     def get_person_by_id(self, ids: List[str]) -> List[persons.PersonForFolm]:
-        sql_tmp = """
-            SELECT
-                P.id, P.full_name,
-                ARRAY_AGG(DISTINCT fwp.role) AS role,
-                ARRAY_AGG(
-                    DISTINCT CAST(fwp.film_work_id AS VARCHAR)
-                ) AS film_ids,
-                ARRAY_AGG(CAST(fwp.film_work_id AS VARCHAR))
-                FILTER (WHERE fwp.role = 'actor') AS actor,
-                ARRAY_AGG(CAST(fwp.film_work_id AS VARCHAR))
-                FILTER (WHERE fwp.role = 'director') AS director,
-                ARRAY_AGG(CAST(fwp.film_work_id AS VARCHAR))
-                FILTER (WHERE fwp.role = 'writer') AS writer
-            FROM
-                person AS P
-            LEFT JOIN person_film_work AS fwp ON P.id = fwp.person_id
-            WHERE P.id IN %s
-            GROUP BY P.id
-        """
-        rows = self.pg_query(sqlquery=sql_tmp, queryargs=(ids,), single=False)
+        rows = self.pg_query(
+            sqlquery=PERSON_BY_ID,
+            queryargs=(ids,),
+            single=False,
+        )
         return [persons.PersonDetails(**row) for row in rows]
 
     def get_film_by_id(self, ids: List[str]) -> List[films.Film]:
-        sql_tmp = """
-            SELECT
-            fw.id, fw.title, fw.description, fw.rating, fw.type,
-            ARRAY_AGG(DISTINCT g.name) AS genres_names,
-            ARRAY_AGG(DISTINCT p.full_name) FILTER
-            (WHERE pfw.role = 'actor') AS actors_names,
-            ARRAY_AGG(DISTINCT p.full_name)
-            FILTER (WHERE pfw.role = 'director') AS directors_names,
-            ARRAY_AGG(DISTINCT p.full_name)
-            FILTER (WHERE pfw.role = 'writer') AS writers_names,
-            ARRAY_AGG(
-                DISTINCT
-                g.id || ' : '
-                || g.name || ' : '
-                || COALESCE(g.description, 'EMPTY')
-            ) AS genres,
-            ARRAY_AGG(DISTINCT p.id || ' : ' || p.full_name)
-            FILTER (WHERE pfw.role = 'director') AS directors,
-            ARRAY_AGG(DISTINCT p.id || ' : ' || p.full_name)
-            FILTER (WHERE pfw.role = 'actor') AS actors,
-            ARRAY_AGG(DISTINCT p.id || ' : ' || p.full_name)
-            FILTER (WHERE pfw.role = 'writer') AS writers
-            FROM film_work as fw
-            LEFT JOIN person_film_work as pfw ON pfw.film_work_id = fw.id
-            LEFT JOIN person as p ON p.id = pfw.person_id
-            LEFT JOIN genre_film_work as gfw ON gfw.film_work_id = fw.id
-            LEFT JOIN genre g ON g.id = gfw.genre_id
-            WHERE fw.id IN %s
-            GROUP BY fw.id
-        """
-        rows = self.pg_query(sqlquery=sql_tmp, queryargs=(ids,), single=False)
+        rows = self.pg_query(
+            sqlquery=FILM_BY_ID,
+            queryargs=(ids,),
+            single=False,
+        )
         return [
             films.Film(
                 id=row['id'],
@@ -136,24 +84,26 @@ class PostgresExtractor(object):
                 genres=[
                     genres.Genre(**self._genre_split(genre))
                     for genre in row['genres']
-                ],
+                ] if row['genres'] is not None else [],
                 actors=[
                     persons.PersonForFolm(**self._person_split(actor))
                     for actor in row['actors']
-                ],
+                ] if row['actors'] is not None else [],
                 directors=[
                     persons.PersonForFolm(**self._person_split(director))
                     for director in row['directors']
-                ],
+                ] if row['directors'] is not None else [],
                 writers=[
                     persons.PersonForFolm(**self._person_split(writer))
                     for writer in row['writers']
-                ],
+                ] if row['writers'] is not None else [],
             )
             for row in rows
         ]
 
     def _genre_split(self, row):
+        if row is None:
+            return None
         genre = row.split(' : ')
         return {
             'id': genre[0],
@@ -162,6 +112,8 @@ class PostgresExtractor(object):
         }
 
     def _person_split(self, row):
+        if row is None:
+            return None
         person = row.split(' : ')
         return {
             'id': person[0],
