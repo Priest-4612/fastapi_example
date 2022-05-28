@@ -21,23 +21,25 @@ class ElasticETL(object):
             self.es.indices.create(index=index, body=body)
 
     @backoff.on_predicate(backoff.expo, max_time=60)
-    def set_bulk(self, index, data):
+    def set_bulk(self, index, body):
         try:
             return helpers.bulk(
-                self.es, self.generate_elastic_data(index, data),
+                self.es,
+                self.generate_elastic_data(index, body),
+                stats_only=True,
             )
         except exceptions.ConnectionError:
             self.connect()
             return helpers.bulk(
-                self.es, self.generate_elastic_data(index, data),
+                self.es, self.generate_elastic_data(index, body),
             )
 
-    def generate_elastic_data(self, index, data: list[BaseModel]):
+    def generate_elastic_data(self, index, body: list[BaseModel]):
         yield from (
             {
                 '_index': index,
                 '_id': item.id,
                 '_source': item.json(),
             }
-            for item in data
+            for item in body
         )
